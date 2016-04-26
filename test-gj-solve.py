@@ -1,7 +1,6 @@
 import numpy as np
 import argparse
 from gauss_jordan import GaussJordan, Row
-from test import gauss_jordan_solve
 
 def random_sample(GJ, scale, verbose=False):
     x = scale * np.random.rand(GJ.nvars)
@@ -53,20 +52,27 @@ if __name__=='__main__':
     ### MAIN ###
     parser = argparse.ArgumentParser()
     parser.add_argument('structurefile', type=str,
-                        help='Name of the file specifying sparsity pattern of the matrix on which to test the gauss-jordan solution.')
+                        help="""Name of the file specifying sparsity pattern 
+                        of the matrix on which to test the gauss-jordan solution.""")
     parser.add_argument('-n', type=int, default=15,
                         help='Number of random matrices to test. (Default is 15).')
     parser.add_argument('-scale', type=float, default=100.0,
                         help='Scaling factor with which to multiply the random matrix elements.')
     parser.add_argument('-tol', type=float, default=1.0e-12,
-                        help='Round-off error tolerance for residuals (both average and stdev) below which the solution is OK. (Default is 1.0E-12).') 
+                        help="""Round-off error tolerance for residuals (both average and stdev) 
+                        below which the solution is OK. (Default is 1.0E-12).""") 
     parser.add_argument('-smp', action='store_true',
-                        help='Attempt to simplify solution. Can be very slow, but if possible, will reduce the number of operations required for the solution.')
+                        help="""Attempt to simplify solution. Can be very slow, but if possible, 
+                        will reduce the number of operations required for the solution.""")
     parser.add_argument('-cse', action='store_true',
-                        help='Execute Common Subexpression Elimination. (After simplification if the -smp option is present.) This may be more helpful for Python than a compiled language with a compiler capable of weighing the operation and memory costs.')
+                        help="""Execute Common Subexpression Elimination. 
+                        (After simplification if the -smp option is present.) 
+                        This may be more helpful for Python than a compiled language 
+                        with a compiler capable of weighing the operation and memory costs.""")
     args = parser.parse_args()
 
     # Generate the python script file 'test.py' to solve the system
     sfile = args.structurefile
     GJ = GaussJordan(sfile, 'test.py', 'test.f95', args.smp, args.cse)
+    from test import gauss_jordan_solve
     test_gj_solve(GJ, args.n, args.scale, args.tol)
