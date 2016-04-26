@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Solve Ax=b with gauss-jordan elimination
 # Requires Python 3.
 import sympy
@@ -216,7 +217,9 @@ class GaussJordan(object):
 
         amat_t = []
         ncols = None
-        for line in lines:
+        for iline, line in enumerate(lines):
+            if iline == 0:
+                continue # This is the size of the square matrix, useful for Fortran
             if line=='':
                 continue
             elif line[0]=='#':

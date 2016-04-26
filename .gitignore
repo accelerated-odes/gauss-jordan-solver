@@ -1,1 +1,9 @@
-.pyc
+*~
+*.pyc
+__pycache__
+
+_build.*
+*.o
+*.mod
+*.exe
+
