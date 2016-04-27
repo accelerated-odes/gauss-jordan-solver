@@ -16,7 +16,7 @@ The ```-py``` option will generate a python file named whatever you pass in ```[
 
 ## -f95: Generating Fortran
 
-The ```-py``` option will generate a Fortran-95 compatible file named whatever you pass in ```[fortran output]``` which contains a subroutine (```gauss_jordan_solve```) which finds the solution vector to the system Ax=b.
+The ```-f95``` option will generate a Fortran-95 compatible file named whatever you pass in ```[fortran output]``` which contains a subroutine (```gauss_jordan_solve```) which finds the solution vector to the system Ax=b.
 
 ## -smp
 
