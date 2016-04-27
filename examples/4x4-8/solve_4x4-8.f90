@@ -21,6 +21,5 @@ contains
     x(4) = (b(4) - A(4,2)*b(3)/A(3,2) + A(1,3)*A(4,1)*b(2)/(A(1,1)*A(2,3)) - A(4,1) &
       *b(1)/A(1,1))/(-A(3,4)*A(4,2)/A(3,2) + A(1,3)*A(2,4)*A(4,1)/( &
       A(1,1)*A(2,3)))
-    
   end subroutine gauss_jordan_solve
 end module gauss_jordan

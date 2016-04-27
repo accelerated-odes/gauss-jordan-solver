@@ -1,0 +1,9 @@
+ Using LAPACK DGESV Solver
+     1000000  Solution Iterations of a Random System
+ Residuals for solution of the system Ax=b.
+ x(           1 ):   -1.1102230246251565E-016
+ x(           2 ):    1.1102230246251565E-016
+
+real	0m0.210s
+user	0m0.208s
+sys	0m0.001s

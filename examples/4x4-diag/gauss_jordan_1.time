@@ -1,0 +1,11 @@
+ Using Nonzero Gauss-Jordan Solver
+     1000000  Random Systems Solved
+ Residual Average +/- StdDev for solutions of the system Ax=b.
+ x(           1 ):    1.3160775264996639E-020  +/-    2.8294812543639991E-017
+ x(           2 ):   -2.3068972811656972E-020  +/-    2.8355970744328134E-017
+ x(           3 ):    2.0398610812912434E-020  +/-    2.8222528351774399E-017
+ x(           4 ):    1.1556124709499044E-020  +/-    2.8262067148583981E-017
+
+real	0m0.502s
+user	0m0.492s
+sys	0m0.010s

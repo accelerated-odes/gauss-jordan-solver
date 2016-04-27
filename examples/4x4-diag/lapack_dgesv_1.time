@@ -1,0 +1,11 @@
+ Using LAPACK DGESV Solver
+     1000000  Random Systems Solved
+ Residual Average +/- StdDev for solutions of the system Ax=b.
+ x(           1 ):   -9.3125584724369509E-021  +/-    2.8271935601518203E-017
+ x(           2 ):   -2.7976074385425209E-020  +/-    2.8301048503427603E-017
+ x(           3 ):   -3.0052442671446402E-020  +/-    2.8292692882453580E-017
+ x(           4 ):    2.4967634432377165E-021  +/-    2.8269155144806419E-017
+
+real	0m0.804s
+user	0m0.795s
+sys	0m0.008s

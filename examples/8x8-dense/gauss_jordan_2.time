@@ -1,0 +1,15 @@
+ Using Nonzero Gauss-Jordan Solver
+     1000000  Solution Iterations of a Random System
+ Residuals for solution of the system Ax=b.
+ x(           1 ):   -1.9984014443252818E-015
+ x(           2 ):    9.9920072216264089E-016
+ x(           3 ):    1.2212453270876722E-015
+ x(           4 ):   -1.9984014443252818E-015
+ x(           5 ):   -1.3322676295501878E-015
+ x(           6 ):    5.5511151231257827E-015
+ x(           7 ):   -2.3314683517128287E-015
+ x(           8 ):   -2.4980018054066022E-015
+
+real	0m1.799s
+user	0m1.788s
+sys	0m0.002s
