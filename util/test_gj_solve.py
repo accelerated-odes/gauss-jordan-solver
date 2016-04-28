@@ -38,6 +38,7 @@ def test_gj_solve(GJ, ntest, scale, tol):
     xresd_ave = np.average(xresd_accumulate, axis=0)
     xresd_std = np.std(xresd_accumulate, axis=0)
     # Print statistics
+    print('----------------------------------------')
     print('Residual Average +/- StdDev for solutions of the system Ax=b.')
     print('Using {} random iterations.'.format(ntest))
     is_okay = True
@@ -45,8 +46,8 @@ def test_gj_solve(GJ, ntest, scale, tol):
         print('Residual for X[{}]: {} +/- {}'.format(i, xstat[0], xstat[1]))
         if xstat[0] > tol or xstat[1] > tol:
             is_okay = False
-        if not is_okay:
             print('Tolerance ERROR for X[{}]!'.format(i))
+            print('Tolerance is {}'.format(tol))
     if is_okay:
         print('System OK!\nAverage and standard deviation of all residuals is below the tolerance {}'.format(tol))
         
