@@ -10,7 +10,7 @@ See the ```examples/template``` directory for a starting setup for
 generating and testing a new solver.
 
 
-# Usage:
+# Use and Options:
 
 The only required argument is the maskfile, all others are optional.
 
