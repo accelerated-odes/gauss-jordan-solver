@@ -1,6 +1,13 @@
 # gauss-jordan-solver
 
-Writes Fortran or Python routines for solving the linear system Ax=b ignoring zero elements of A, given its sparsity pattern.
+Writes Fortran or Python routines for solving the linear system Ax=b
+ignoring zero elements of A, given its sparsity pattern.
+
+See the ```examples``` directory for sample outputs given different
+matrix sparsities.
+
+See the ```examples/template``` directory for a starting setup for
+generating and testing a new solver.
 
 # Usage:
 
@@ -36,9 +43,9 @@ The maskfile specifies the sparsity layout of the matrix A composing the left-ha
 
 ```
 [number of rows]
-[row 1 sparsity]
-[row 2 sparsity]
-[row 3 sparsity]
+[row 1 sparsity mask]
+[row 2 sparsity mask]
+[row 3 sparsity mask]
 ...
 ```
 
