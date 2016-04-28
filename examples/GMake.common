@@ -1,6 +1,10 @@
 # basic rules for building the source.  Problems are built in
 # sub-directories.
 
+# Add utils directory to source directory list
+
+SRC_DIRS += ../../util
+
 # vpath is the list of directories to search for source files.
 vpath %.f90 $(SRC_DIRS)
 vpath %.f $(SRC_DIRS)

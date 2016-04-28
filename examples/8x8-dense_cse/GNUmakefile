@@ -13,7 +13,6 @@ ALL: $(pnames)
 
 
 SRC_DIRS := .
-SRC_DIRS += ../../.
 
 include ../GMake.common
 

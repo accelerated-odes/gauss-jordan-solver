@@ -97,7 +97,7 @@ $ python gauss_jordan.py structure_4x4 -py solve_4x4.py -f95 solve_4x4.f90 -cse
 
 ## Python
 
-The script ```test_gj_solve.py``` is provided to test the python
+The script ```util/test_gj_solve.py``` is provided to test the python
 solver produced by ```gauss_jordan.py```. The test script takes a
 sparsity file, generates a python solver, then solves a set of random
 matrix equations with the provided sparsity. It compares the true
@@ -107,11 +107,11 @@ For example, to test the solver for the sparsity mask in
 ```examples/4x4-8/structure_4x4-8```, using common subexpression
 elimination and 100 random matrix systems, run the following:
 
-```$ python test_gj_solve.py examples/4x4-8/structure_4x4-8 -n 100 -cse```
+```$ python util/test_gj_solve.py examples/4x4-8/structure_4x4-8 -n 100 -cse```
 
 ## Fortran
 
-The program ```test_gj_solve.f90``` is provided to test the fortran
+The program ```util/test_gj_solve.f90``` is provided to test the fortran
 solver produced by ```gauss_jordan.py```. Instructions for its use are
 described in ```examples/template/README.md```.
 
