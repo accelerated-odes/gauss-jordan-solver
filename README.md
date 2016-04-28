@@ -103,6 +103,12 @@ sparsity file, generates a python solver, then solves a set of random
 matrix equations with the provided sparsity. It compares the true
 solution with the solver solution and prints residual statistics.
 
+For example, to test the solver for the sparsity mask in
+```examples/4x4-8/structure_4x4-8```, using common subexpression
+elimination and 100 random matrix systems, run the following:
+
+```$ python test_gj_solve.py examples/4x4-8/structure_4x4-8 -n 100 -cse```
+
 ## Fortran
 
 The program ```test_gj_solve.f90``` is provided to test the fortran
