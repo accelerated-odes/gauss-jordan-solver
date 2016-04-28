@@ -485,7 +485,7 @@ if __name__=='__main__':
     parser.add_argument('-smp', action='store_true',
                         help='Attempt to simplify solution. Can be very slow, but if possible, will reduce the number of operations required for the solution.')
     parser.add_argument('-cse', action='store_true',
-                        help='Execute Common Subexpression Elimination. (After simplification if the -smp option is present.) This may be more helpful for Python than a compiled language with a compiler capable of weighing the operation and memory costs.')
+                        help='Execute Common Subexpression Elimination. (After simplification if the -smp option is present.) This is pretty fast.')
     parser.add_argument('-v', action='store_true',
                         help='Enable verbose output.')
     args = parser.parse_args()
