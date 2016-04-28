@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import numpy as np
+import os
 import argparse
 from gauss_jordan import GaussJordan, Row
 
@@ -31,7 +32,7 @@ def test_gj_solve(GJ, ntest, scale, tol):
         xtrue, A = random_sample(GJ, scale)
         b = np.dot(A, xtrue)
         xtest = gauss_jordan_solve(A, b)
-        xresd = np.absolute(xtrue-xtest) # Absolute value of difference
+        xresd = xtrue-xtest # Absolute value of difference
         xresd_accumulate[i][:] = xresd[:]
     # Get statistics
     xresd_ave = np.average(xresd_accumulate, axis=0)
@@ -70,10 +71,17 @@ if __name__=='__main__':
                         (After simplification if the -smp option is present.) 
                         This may be more helpful for Python than a compiled language 
                         with a compiler capable of weighing the operation and memory costs.""")
+    parser.add_argument('-keep', action='store_true',
+                        help="""Do not delete 'test.py' output solver once the test is complete.""")
     args = parser.parse_args()
 
     # Generate the python script file 'test.py' to solve the system
     sfile = args.structurefile
-    GJ = GaussJordan(sfile, 'test.py', 'test.f95', args.smp, args.cse)
+    GJ = GaussJordan(sfile, 'test.py', None, args.smp, args.cse)
     from test import gauss_jordan_solve
     test_gj_solve(GJ, args.n, args.scale, args.tol)
+
+    # Delete the 'test.py' file if user didn't decide to keep it
+    if not args.keep:
+        here = os.getcwd()
+        os.remove(os.path.join(here, 'test.py'))
