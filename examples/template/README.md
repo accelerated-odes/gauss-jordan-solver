@@ -69,12 +69,12 @@ Command line arguments for the Fortran test program test_gj_solve are:
 
 * (3) Selection for which solver to use (1 or 2):
 
-** 1 : use the sparse gauss-jordan solver
+    - 1: use the sparse gauss-jordan solver
 
-** 2 : use LAPACK DGESV solver
+    - 2: use LAPACK DGESV solver
 
 * (4) Selection for which randomization scheme to use (1 or 2):
 
-** 1 : Solve different randomized matrix systems (for statistical purposes)
+    - 1: Solve different randomized matrix systems (for statistical purposes)
 
-** 2 : Solve the same randomized matrix system over and over (for timing purposes)
+    - 2: Solve the same randomized matrix system over and over (for timing purposes)
