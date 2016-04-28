@@ -396,24 +396,18 @@ class GaussJordan(object):
             print('')
 
     def pythonify(self,s):
-        # Python-ify string s by replacing AOi_jC with A[i][j]
-        # and bOiC with b[i].
+        # Python-ify string s by replacing A_i_j_ with A[i][j]
+        # and b_i_ with b[i].
         # Also start indexing at 0 instead of 1.
         sout = str(s)
-        # sout = sout.replace('O', '[')
-        # sout = sout.replace('C', '-1]')
-        # sout = sout.replace('_', '-1][')
         for k in self.symtab.keys():
             sout = sout.replace(k, self.symtab[k].pyrep)
         return sout
 
     def fortranify(self,s):
-        # Fortran-ify string s by replacing AOi_jC with A(i,j)
-        # and bOiC with b(i)
+        # Fortran-ify string s by replacing A_i_j_ with A(i,j)
+        # and b_i_ with b(i)
         sout = str(s)
-        # sout = sout.replace('O', '(')
-        # sout = sout.replace('C', ')')
-        # sout = sout.replace('_', ',')
         for k in self.symtab.keys():
             sout = sout.replace(k, self.symtab[k].fnrep)
         return sout
