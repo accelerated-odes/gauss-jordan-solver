@@ -209,9 +209,6 @@ class GaussJordan(object):
         self.sparsity = None # Original matrix system sparsity pattern
         self.symtab = {}
 
-        self.a_re = re.compile('A_([0-9]+)_([0-9]+)_')
-        self.b_re = re.compile('b_([0-9]+)_')
-        
         if self.infile:
             self.readfile()
             if self.verbose:
