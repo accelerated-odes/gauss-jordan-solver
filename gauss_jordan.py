@@ -438,7 +438,7 @@ class GaussJordan(object):
         except:
             raise
         indent = ' '*2
-        fo.write('module gauss_jordan\n')
+        fo.write('module gauss_jordan_module\n')
         fo.write('{}implicit none\n'.format(indent))
         fo.write('\n')
         fo.write('contains\n')
@@ -466,7 +466,7 @@ class GaussJordan(object):
                                                     standard = 95))
             fo.write('{}x({}) = {}\n'.format(indent*2, i+1, sol_value))
         fo.write('{}end subroutine gauss_jordan_solve\n'.format(indent))
-        fo.write('end module gauss_jordan\n')
+        fo.write('end module gauss_jordan_module\n')
         fo.close()
 
 ## Run
