@@ -38,7 +38,7 @@ subroutine get_nonzero_dp(x)
 end subroutine get_nonzero_dp
 
 subroutine random_solve(which_iters, which_solver, N, niter, Asparse, aresid)
-  use gauss_jordan, only : gauss_jordan_solve
+  use gauss_jordan_module, only : gauss_jordan_solve
   implicit none
 
   integer, intent(in) :: N, which_solver, which_iters, niter
