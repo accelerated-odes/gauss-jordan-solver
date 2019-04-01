@@ -32,6 +32,14 @@ whatever you pass in ```[fortran output]``` which contains a
 subroutine (```gauss_jordan_solve```) which finds the solution vector
 to the system Ax=b.
 
+## -cpp: Generating C++
+
+The ```-cpp``` option will generate a C++ file named whatever you pass
+in ```[c++ output]``` which contains a static class member function
+(```SparseGaussJordan::solve```) which finds the solution vector to
+the system Ax=b. This is only supported if the matrix is in CSR
+format.
+
 ## -smp
 
 If present, the ```-smp``` argument uses Sympy to attempt to
@@ -46,7 +54,10 @@ common sub-expressions in the solution, introducing new "scratch"
 variables so that no calculation is performed more than once. In some
 cases, can reduce runtime by nearly an order of magnitude (Fortran, on
 a CPU). Unlike algebraic simplification, eliminating common
-subexpressions with Sympy is fast.
+subexpressions with Sympy is fast. This is recommended for numerical
+stability if the absolute values of the entries in A cover a large
+range, e.g. [0, 1e100]. From limited testing of such a case, it is
+sometimes in fact necessary.
 
 ## -v
 

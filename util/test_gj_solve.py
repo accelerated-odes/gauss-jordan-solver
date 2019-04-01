@@ -31,11 +31,26 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import numpy as np
 import os
 import argparse
-from gauss_jordan import GaussJordan, Row
+from SparseGaussJordan import GaussJordan, Row
 
-def random_sample(GJ, scale, verbose=False):
+def csr_matrix_vector_dot(GJ, A, x):
+    b = np.zeros_like(x)
+    
+    icsr = 0
+    for irow, r in enumerate(GJ.sparsity):
+        for icol in range(GJ.nvars):
+            if not r.zero_at(icol):
+                b[irow] += A[icsr] * x[icol]
+                icsr += 1
+    return b
+
+def random_sample(GJ, compressed_sparse_row, scale, verbose=False):
     x = scale * np.random.rand(GJ.nvars)
-    A = np.zeros((GJ.nvars, GJ.nvars), dtype=np.float64)
+    if compressed_sparse_row:
+        A = np.zeros(GJ.get_number_nonzero(), dtype=np.float64)
+    else:
+        A = np.zeros((GJ.nvars, GJ.nvars), dtype=np.float64)
+    icsr = 0
     for j, r in enumerate(GJ.sparsity):
         for k in range(GJ.nvars):
             if not r.zero_at(k):
@@ -43,23 +58,31 @@ def random_sample(GJ, scale, verbose=False):
                 while frand==0.0:
                     # Get a nonzero random number for element of A.
                     frand = np.random.rand()
-                A[j][k] = scale * frand
+                if compressed_sparse_row:
+                    A[icsr] = scale * frand
+                else:
+                    A[j][k] = scale * frand
                 if verbose:
                     print('A[{}][{}] = random'.format(j, k))
+                icsr += 1
             else:
-                A[j][k] = 0.0
+                if not compressed_sparse_row:
+                    A[j][k] = 0.0
                 if verbose:
                     print('A[{}][{}] = 0'.format(j, k))
     return x, A
 
-def test_gj_solve(GJ, ntest, scale, tol):
+def test_gj_solve(GJ, compressed_sparse_row, ntest, scale, tol):
     # Test the Gauss-Jordan solver by randomizing matrix elements and verifying output
     xresd_accumulate = np.empty((ntest, GJ.nvars), dtype=np.float64)
-    xtrue, A = random_sample(GJ, scale, verbose=True) # Print which elements get set
+    xtrue, A = random_sample(GJ, compressed_sparse_row, scale, verbose=True) # Print which elements get set
     print(A)
     for i in range(ntest):
-        xtrue, A = random_sample(GJ, scale)
-        b = np.dot(A, xtrue)
+        xtrue, A = random_sample(GJ, compressed_sparse_row, scale)
+        if compressed_sparse_row:
+            b = csr_matrix_vector_dot(GJ, A, xtrue)
+        else:
+            b = np.dot(A, xtrue)
         xtest = gauss_jordan_solve(A, b)
         xresd = xtrue-xtest # Absolute value of difference
         xresd_accumulate[i][:] = xresd[:]
@@ -92,10 +115,14 @@ if __name__=='__main__':
                         help='Scaling factor with which to multiply the random matrix elements.')
     parser.add_argument('-tol', type=float, default=1.0e-12,
                         help="""Round-off error tolerance for residuals (both average and stdev) 
-                        below which the solution is OK. (Default is 1.0E-12).""") 
+                        below which the solution is OK. (Default is 1.0E-12).""")
+    parser.add_argument('-csr', action='store_true',
+                        help='Use compressed sparse row (CSR) matrix format.')
     parser.add_argument('-smp', action='store_true',
                         help="""Attempt to simplify solution. Can be very slow, but if possible, 
                         will reduce the number of operations required for the solution.""")
+    parser.add_argument('-expand', action='store_true',
+                        help="""Simplify solution by expanding it and performing cancellations.""")    
     parser.add_argument('-cse', action='store_true',
                         help="""Execute Common Subexpression Elimination. 
                         (After simplification if the -smp option is present.) 
@@ -107,9 +134,9 @@ if __name__=='__main__':
 
     # Generate the python script file 'test.py' to solve the system
     sfile = args.structurefile
-    GJ = GaussJordan(sfile, 'test.py', None, args.smp, args.cse)
+    GJ = GaussJordan(sfile, args.csr, 'test.py', None, args.smp, args.expand, args.cse)
     from test import gauss_jordan_solve
-    test_gj_solve(GJ, args.n, args.scale, args.tol)
+    test_gj_solve(GJ, args.csr, args.n, args.scale, args.tol)
 
     # Delete the 'test.py' file if user didn't decide to keep it
     if not args.keep:

@@ -48,6 +48,9 @@ class Element2D(object):
     def fortranify(self):
         return '{}({},{})'.format(self.symbase, self.i, self.j)
 
+    def cify(self):
+        return self.pythonify()
+
 class Element1D(object):
     def __init__(self, symbase, i):
         self.symbase = symbase # Array name (e.g. A)
@@ -60,6 +63,9 @@ class Element1D(object):
 
     def fortranify(self):
         return '{}({})'.format(self.symbase, self.i)
+
+    def cify(self):
+        return self.pythonify()
 
 class Row(object):
     def __init__(self, elist=None):
@@ -201,13 +207,21 @@ class Row(object):
         else:
             return False
 
+    def get_number_nonzero(self):
+        nnz = 0
+        for e in self.elements:
+            if e!=0:
+                nnz += 1
+        return nnz
+
 class GaussJordan(object):
-    def __init__(self, structure_file=None, out_py=None, out_f95=None, smp=None, cse=None, verbose=None):
+    def __init__(self, structure_file=None, compressed_sparse_row=False, out_py=None, out_f95=None, out_cpp=None, smp=None, expand=False, cse=None, verbose=None):
         self.infile = structure_file
         self.cse_rep = None
         self.verbose = verbose
         self.sparsity = None # Original matrix system sparsity pattern
         self.symtab = {}
+        self.compressed_sparse_row = compressed_sparse_row
 
         if self.infile:
             self.readfile()
@@ -220,12 +234,21 @@ class GaussJordan(object):
             if cse:
                 print('Eliminating CSE')
                 self.elim_cse()
+            if expand and (not cse) and (not smp):
+                print('Expanding expressions')
+                self.expand()
             if self.verbose:
                 self.printSolution()
             if out_py:
                 self.writeCode_Python(out_py)
             if out_f95:
                 self.writeCode_Fortran95(out_f95)
+            if out_cpp:
+                if not self.compressed_sparse_row:
+                    print('Error: C++ output only supported for a matrix in CSR format.')
+                    exit()
+                else:
+                    self.writeCode_Cpp(out_cpp)
                 
     def readfile(self):
         # Read in the array mask and store in amat as either 'False'
@@ -275,15 +298,22 @@ class GaussJordan(object):
             exit()
 
         self.asym = []
+        index_csr = 1
         for i, r in enumerate(amat_t):
             r_s = []
             for j, a_ij in enumerate(r):
                 if self.verbose:
                     print(a_ij)
                 if a_ij:
-                    symrep = 'A_'+str(i+1)+'_'+str(j+1)+'_'
-                    self.symtab[symrep] = Element2D('A', i+1, j+1)
+                    symrep = None
+                    if self.compressed_sparse_row:
+                        symrep = 'A_'+str(index_csr)+'_'
+                        self.symtab[symrep] = Element1D('A', index_csr)
+                    else:
+                        symrep = 'A_'+str(i+1)+'_'+str(j+1)+'_'
+                        self.symtab[symrep] = Element2D('A', i+1, j+1)
                     r_s.append(sympy.symbols(symrep))
+                    index_csr += 1
                 else:
                     r_s.append(0)
             symrep = 'b_'+str(i+1)+'_'
@@ -293,6 +323,12 @@ class GaussJordan(object):
 
         # Save a copy of the original sparsity
         self.sparsity = [r for r in self.asym]
+
+    def get_number_nonzero(self):
+        nnz = 0
+        for r in self.asym:
+            nnz += r.get_number_nonzero()
+        return nnz
         
     def printEquation(self):
         print('Symbolic array equation [A|b]:')
@@ -369,7 +405,20 @@ class GaussJordan(object):
                 else:
                     print('No Shorter Representation Found')
                 print('----------------------------------------')
-                    
+
+    def expand(self):
+        # Expand solutions.
+        for i, s in enumerate(self.solution):
+            sres = sympy.expand(s)
+            self.solution[i] = sres
+            if self.verbose:
+                print('----------------------------------------')
+                print('Expand Solution {} Report:'.format(i))
+                print('Un-Expanded:')
+                print(s)
+                print('Expanded:')
+                print(sres)
+                print('----------------------------------------')
 
     def elim_cse(self):
         ## Apply common sub-expressions elimination to solution
@@ -386,7 +435,7 @@ class GaussJordan(object):
 
     def printSolution(self):
         print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-        print('FINAL SOLUTION')
+        print('Solution:')
         print('')
         for i, sol in enumerate(self.solution):
             print('X{} = {}'.format(i+1, sol))
@@ -400,6 +449,9 @@ class GaussJordan(object):
         for k in self.symtab.keys():
             sout = sout.replace(k, self.symtab[k].pyrep)
         return sout
+
+    def cify(self,s):
+        return self.pythonify(s)
 
     def fortranify(self,s):
         # Fortran-ify string s by replacing A_i_j_ with A(i,j)
@@ -429,6 +481,31 @@ class GaussJordan(object):
             fo.write('{}x[{}] = {}\n'.format(indent, i, self.pythonify(sol)))
         fo.write('\n')
         fo.write('{}return x\n'.format(indent))
+        fo.close()
+
+    def writeCode_Cpp(self, outname):
+        ## Write C Solver Function
+        try:
+            fo = open(outname, 'w')
+        except:
+            raise
+        indent = ' '*2
+        fo.write('class SparseGaussJordan {\n')
+        fo.write('public:\n'.format(indent))
+        fo.write('{}__host__ __device__\n'.format(indent))
+        fo.write('{}static void solve(Real* A, Real* x, Real* b)'.format(indent) + ' {\n')
+        
+        if self.cse_rep:
+            for rep in self.cse_rep:
+                rep_value = self.cify(sympy.ccode(rep[1], precision = 15))
+                fo.write('{}Real {} = {};\n'.format(indent*2, rep[0], rep_value))
+        fo.write('\n')
+        for i, sol in enumerate(self.solution):
+            sol_value = self.cify(sympy.ccode(sol, precision = 15))
+            fo.write('{}x[{}] = {};\n'.format(indent*2, i, sol_value))
+            
+        fo.write('{}'.format(indent) + '}\n')
+        fo.write('};\n')
         fo.close()
 
     def writeCode_Fortran95(self, outname):
@@ -475,12 +552,18 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('maskfile', type=str,
                         help='Name of the input mask file for the array A in A*x=b.')
+    parser.add_argument('-csr', action='store_true',
+                        help='Use compressed sparse row (CSR) matrix format.')
     parser.add_argument('-py', type=str,
                         help='Name of the Python output file to generate.')
     parser.add_argument('-f95', type=str,
                         help='Name of the Fortran-95 output file to generate.')
+    parser.add_argument('-cpp', type=str,
+                        help='Name of the C++ output file to generate.')
     parser.add_argument('-smp', action='store_true',
                         help='Attempt to simplify solution. Can be very slow, but if possible, will reduce the number of operations required for the solution.')
+    parser.add_argument('-expand', action='store_true',
+                        help='Simplify resulting expressions using Sympy expand()')
     parser.add_argument('-cse', action='store_true',
                         help='Execute Common Subexpression Elimination. (After simplification if the -smp option is present.) This is pretty fast.')
     parser.add_argument('-v', action='store_true',
@@ -488,4 +571,4 @@ if __name__=='__main__':
     args = parser.parse_args()
     
     if args.maskfile:
-        GJ = GaussJordan(args.maskfile, args.py, args.f95, args.smp, args.cse, args.v)
+        GJ = GaussJordan(args.maskfile, args.csr, args.py, args.f95, args.cpp, args.smp, args.expand, args.cse, args.v)
