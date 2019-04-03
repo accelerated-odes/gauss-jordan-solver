@@ -33,7 +33,6 @@ import importlib.util
 from SparseGaussJordan import GaussJordan, RandomTesting
 
 if __name__=='__main__':
-    ## Read CMD Line Arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('maskfile', type=str,
                         help='Name of the input mask file for the array A in A*x=b.')
