@@ -6,53 +6,68 @@ Ax=b ignoring zero elements of A, given its sparsity pattern.
 The code generation options support either a dense or compressed
 sparse row (CSR) layout for the matrix A.
 
-See the ```examples``` directory for sample outputs given different
+See the `examples` directory for sample outputs given different
 matrix sparsities.
 
-See the ```examples/template``` directory for a starting setup for
+See the `examples/template` directory for a starting setup for
 generating and testing a new solver.
 
+# Installation:
+
+A `setup.py` installation script is provided:
+
+```
+$ python3 setup.py install --user
+```
+
+After this, the command-line program `gjsparse` should be in your PATH.
 
 # Use and Options:
 
 The only required argument is the maskfile, all others are optional.
 
 ```
-$ python gauss_jordan.py [maskfile] -py [python output] -f95 [fortran output] -smp -cse -v
+$ gjsparse [maskfile] -py [python output] -f95 [fortran output] -cse
 ```
 
 ## -py: Generating Python
 
-The ```-py``` option will generate a python file named whatever you
-pass in ```[python output]``` which contains a function
-(```gauss_jordan_solve```) returning the solution vector to the system
+The `-py` option will generate a python file named whatever you
+pass in `[python output]` which contains a function
+(`gauss_jordan_solve`) returning the solution vector to the system
 Ax=b.
 
 ## -f95: Generating Fortran
 
-The ```-f95``` option will generate a Fortran-95 compatible file named
-whatever you pass in ```[fortran output]``` which contains a
-subroutine (```gauss_jordan_solve```) which finds the solution vector
+The `-f95` option will generate a Fortran-95 compatible file named
+whatever you pass in `[fortran output]` which contains a
+subroutine (`gauss_jordan_solve`) which finds the solution vector
 to the system Ax=b.
 
 ## -cpp: Generating C++
 
-The ```-cpp``` option will generate a C++ file named whatever you pass
-in ```[c++ output]``` which contains a static class member function
-(```SparseGaussJordan::solve```) which finds the solution vector to
+The `-cpp` option will generate a C++ file named whatever you pass
+in `[c++ output]` which contains a static class member function
+(`SparseGaussJordan::solve`) which finds the solution vector to
 the system Ax=b. This is only supported if the matrix is in CSR
 format.
 
+## -csr: Compressed Sparse Row matrix format
+
+The `-csr` option will generate code to index into a matrix in
+compressed sparse row format. At present this only supports generating
+C++ code.
+
 ## -smp
 
-If present, the ```-smp``` argument uses Sympy to attempt to
+If present, the `-smp` argument uses Sympy to attempt to
 algebraically simplify the solution under the constraint that
 simplification must reduce the total number of operations. Sympy can
 be extremely slow for dense 8x8 matrices or larger.
 
 ## -cse
 
-If present, the ```-cse``` argument uses Sympy to find and eliminate
+If present, the `-cse` argument uses Sympy to find and eliminate
 common sub-expressions in the solution, introducing new "scratch"
 variables so that no calculation is performed more than once. In some
 cases, can reduce runtime by nearly an order of magnitude (Fortran, on
@@ -64,7 +79,7 @@ sometimes in fact necessary.
 
 ## -v
 
-If present, the ```-v``` argument writes verbose output to the
+If present, the `-v` argument writes verbose output to the
 terminal describing the intermediate solution and other internal
 steps.
 
@@ -88,7 +103,7 @@ nonzero.
 
 ## Sample Maskfile: 4x4 System
 
-(File ```structure_4x4```)
+(File `structure_4x4`)
 
 ```
 4
@@ -103,7 +118,7 @@ nonzero.
 Writes Python and Fortran solver subroutines using common subexpression elimination.
 
 ```
-$ python gauss_jordan.py structure_4x4 -py solve_4x4.py -f95 solve_4x4.f90 -cse
+$ gjsparse structure_4x4 -py solve_4x4.py -f95 solve_4x4.f90 -cse
 ```
 
 
@@ -111,29 +126,38 @@ $ python gauss_jordan.py structure_4x4 -py solve_4x4.py -f95 solve_4x4.f90 -cse
 
 ## Python
 
-The script ```util/test_gj_solve.py``` is provided to test the python
-solver produced by ```gauss_jordan.py```. The test script takes a
-sparsity file, generates a python solver, then solves a set of random
-matrix equations with the provided sparsity. It compares the true
-solution with the solver solution and prints residual statistics.
+`gjsparse` can test the generated python solver by solving a set of
+random matrix equations with the provided sparsity. It compares the
+true solution with the solver solution and prints residual statistics.
+
+This is enabled with the `-t [N]` option, where `[N]` is the number of
+random matrix systems to test. There are optional flags for test
+customization:
+
+- `-ts [scale]`: scale the test matrices by the `[scale]` factor
+- `-tt [tolerance]`: report test results using the absolute `[tolerance]` as a reference.
 
 For example, to test the solver for the sparsity mask in
-```examples/4x4-8/structure_4x4-8```, using common subexpression
+`examples/4x4-8/maskfile`, using common subexpression
 elimination and 100 random matrix systems, run the following:
 
-```$ python util/test_gj_solve.py examples/4x4-8/structure_4x4-8 -n 100 -cse```
+```
+$ gjsparse examples/4x4-8/maskfile -t 100 -cse
+```
 
 ## Fortran
 
-The program ```util/test_gj_solve.f90``` is provided to test the fortran
-solver produced by ```gauss_jordan.py```. Instructions for its use are
-described in ```examples/template/README.md```.
+The program `util/test_gj_solve.f90` is provided to test the fortran
+outputs. Instructions for its use are described in
+`examples/template/README.md`.
 
 
 # Requirements
 
-* Python 3. (Developed with Python 3.5.1).
+* Python 3.5 or later (Developed with Python 3.5.1).
 
 * Sympy
 
 * numpy (for optional testing of the python solver output)
+
+* gfortran (for optional testing with the Fortran 90 output)
