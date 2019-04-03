@@ -90,13 +90,16 @@ subroutine random_solve(which_iters, which_solver, N, niter, Asparse, aresid)
      write(*,*) 'NO SOLVER SPECIFIED. ENTER 1 or 2.'
      stop
   end if
-  aresid = xtrue - xsolv
+  aresid = abs(xtrue - xsolv)
 end subroutine random_solve
 
 program test_gj_solve
-  ! Takes 2 command-line arguments:
+  ! Takes 4 command-line arguments:
   ! 1: Name of sparsity structure file to read
   ! 2: Number of random matrix equations Ax=b to solve
+  ! 3: Which solver to use (1 = gauss jordan, 2 = LAPACK DGESV)
+  ! 4: Matrix generation (1 = resample matrix every iteration,
+  !                       2 = randomly sample matrix only once)
   
   implicit none
   
@@ -108,18 +111,25 @@ program test_gj_solve
   double precision, dimension(:), allocatable :: arave, arstd
   double precision :: scratch
   integer :: i, j
+  logical :: invalid_arguments
 
   ! Initialize the random number generator
   call init_random_seed()
+
+  invalid_arguments = .false.
   
   ! Read the first command-line argument as the sparsity file name
   call GET_COMMAND_ARGUMENT(1, sparsity_file)
+
+  if (len(trim(sparsity_file)) .eq. 0) then
+     invalid_arguments = .true.
+  end if
+
   ! Read the second command-line argument as the number of random solutions to run
   call GET_COMMAND_ARGUMENT(2, str_num_iters)
   read(str_num_iters, '(I50)') niter
   if ( niter <= 0 ) then
-     write(*,*) 'ERROR: niter should be >= 1.'
-     stop
+     invalid_arguments = .true.
   end if
   ! Read the third command-line argument as the selection for which solver to use
   ! if which_solver = 1, then use the nonzero gauss-jordan solver
@@ -127,8 +137,7 @@ program test_gj_solve
   call GET_COMMAND_ARGUMENT(3, str_solver_choice)
   read(str_solver_choice, '(I50)') which_solver
   if ( .not. ( which_solver == 1 .or. which_solver == 2 )) then
-     write(*,*) 'ERROR: which_solver should be 1 or 2.'
-     stop
+     invalid_arguments = .true.
   end if
   if ( which_solver == 1 ) then
      write(*,*) 'Using Nonzero Gauss-Jordan Solver'
@@ -141,7 +150,16 @@ program test_gj_solve
   call GET_COMMAND_ARGUMENT(4, str_iters_choice)
   read(str_iters_choice, '(I50)') which_iters
   if ( .not. ( which_iters == 1 .or. which_iters == 2 )) then
-     write(*,*) 'ERROR: which_iters should be 1 or 2.'
+     invalid_arguments = .true.
+  end if
+
+  if (invalid_arguments) then
+     print *, "test_gj_solve takes 4 command-line arguments:"
+     print *, "  1: Name of sparsity structure file to read"
+     print *, "  2: Number of iterations of matrix equations Ax=b to solve"
+     print *, "  3: Which solver to use (1 = gauss jordan, 2 = LAPACK DGESV)"
+     print *, "  4: Matrix generation (1 = resample random matrix every iteration,"
+     print *, "                        2 = randomly sample matrix only once)"
      stop
   end if
 
