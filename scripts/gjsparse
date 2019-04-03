@@ -1,0 +1,76 @@
+#!/usr/bin/env python
+"""
+Copyright (c) 2016, Donald E. Willcox
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+
+* Neither the name of the copyright holder nor the names of its
+  contributors may be used to endorse or promote products derived from
+  this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+"""
+import argparse
+import importlib.util
+from SparseGaussJordan import GaussJordan, RandomTesting
+
+if __name__=='__main__':
+    ## Read CMD Line Arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('maskfile', type=str,
+                        help='Name of the input mask file for the array A in A*x=b.')
+    parser.add_argument('-csr', action='store_true',
+                        help='Use compressed sparse row (CSR) matrix format.')
+    parser.add_argument('-py', type=str,
+                        help='Name of the Python output file to generate.')
+    parser.add_argument('-f95', type=str,
+                        help='Name of the Fortran-95 output file to generate.')
+    parser.add_argument('-cpp', type=str,
+                        help='Name of the C++ output file to generate.')
+    parser.add_argument('-smp', action='store_true',
+                        help='Attempt to simplify solution. Can be very slow, but if possible, will reduce the number of operations required for the solution.')
+    parser.add_argument('-expand', action='store_true',
+                        help='Simplify resulting expressions using Sympy expand()')
+    parser.add_argument('-cse', action='store_true',
+                        help='Execute Common Subexpression Elimination. (After simplification if the -smp option is present.) This is pretty fast.')
+    parser.add_argument('-t', '--test', type=int,
+                        help='Number of random matrix tests to run on the generated Python code, solving Ax=b.')
+    parser.add_argument('-ts', '--test_scale', type=float, default=1.0,
+                        help='Scaling factor for the random matrix in the tests. Otherwise entries are in the domain [0.0, 1.0]')
+    parser.add_argument('-tt', '--test_tolerance', type=float, default=1.0e-12,
+                        help='Absolute tolerance for the solution vector x in random matrix solves.')
+    parser.add_argument('-v', action='store_true',
+                        help='Enable verbose output.')
+    args = parser.parse_args()
+
+    GJ = GaussJordan(structure_file=args.maskfile, compressed_sparse_row=args.csr, out_py=args.py, out_f95=args.f95, out_cpp=args.cpp, smp=args.smp, expand=args.expand, cse=args.cse, verbose=args.v)
+
+    if args.test:
+        # Generate the python script file to solve the system if we did not already generate it
+        GJ = GaussJordan(structure_file=args.maskfile, compressed_sparse_row=args.csr, out_py='test.py', smp=args.smp, expand=args.expand, cse=args.cse)
+
+        # Import test.py as a module named test_module
+        test_spec = importlib.util.spec_from_file_location("test", "test.py")
+        test_module = importlib.util.module_from_spec(test_spec)
+        test_spec.loader.exec_module(test_module)
+
+        # Call the random testing function with the generated gauss_jordan_solve function in the test module
+        RandomTesting.test_gj_solve(GJ, args.csr, args.test, args.test_scale, args.test_tolerance, test_module.gauss_jordan_solve, args.v)

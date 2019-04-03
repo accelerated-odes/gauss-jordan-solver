@@ -1,7 +1,10 @@
 # gauss-jordan-solver
 
-Writes Fortran or Python routines for solving the linear system Ax=b
-ignoring zero elements of A, given its sparsity pattern.
+Writes Fortran, Python, or C++ routines for solving the linear system
+Ax=b ignoring zero elements of A, given its sparsity pattern.
+
+The code generation options support either a dense or compressed
+sparse row (CSR) layout for the matrix A.
 
 See the ```examples``` directory for sample outputs given different
 matrix sparsities.

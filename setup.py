@@ -9,5 +9,6 @@ setup(name='gauss-jordan-solver',
       license='BSD',
       packages=find_packages(),
       package_data={"gauss-jordan-solver": ["SparseGaussJordan/*", "util/*"]},
+      scripts=['scripts/gjsparse'],
       install_requires=['numpy', 'sympy'],
       zip_safe=False)
