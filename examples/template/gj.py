@@ -1,8 +1,3 @@
-from gauss_jordan import GaussJordan
+from SparseGaussJordan import GaussJordan
 
-GJ = GaussJordan('maskfile',          # Name of the sparsity maskfile
-                 'solve.py',          # Name of output python solver (None if unwanted)
-                 'solve.f90',         # Name of output fortran solver (None if unwanted)
-                 False,               # If True, attempt to simplify solution algebraically
-                 False,               # If True, perform Common Subexpression Elimination
-                 False)               # If True, enable verbose terminal output
+GJ = GaussJordan(structure_file="maskfile", compressed_sparse_row=False, out_py="solver.py", out_f95="solver.f90", cse=True, smp=False)

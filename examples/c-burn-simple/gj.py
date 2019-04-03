@@ -1,7 +1,3 @@
-from gauss_jordan import GaussJordan
+from SparseGaussJordan import GaussJordan
 
-GJ = GaussJordan(structure_file = 'sparsity.dat',
-                 out_f95 = 'gauss_jordan_module.f90',
-                 smp = False,
-                 cse = True,
-                 verbose = False)
+GJ = GaussJordan(structure_file="maskfile", compressed_sparse_row=False, out_py="solver.py", out_f95="solver.f90", cse=True, smp=False)
