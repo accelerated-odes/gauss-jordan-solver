@@ -32,7 +32,9 @@ from .Row import Row
 from .Element import Element1D, Element2D
 
 class GaussJordan(object):
-    def __init__(self, structure_file=None, compressed_sparse_row=False, out_py=None, out_f95=None, out_cpp=None, smp=None, expand=False, cse=None, verbose=None):
+    def __init__(self, structure_file=None, compressed_sparse_row=False,
+                 out_py=None, out_f95=None, out_cpp=None, cpp_template=None,
+                 smp=None, expand=False, cse=None, verbose=None):
         self.infile = structure_file
         self.cse_rep = None
         self.verbose = verbose
@@ -65,7 +67,7 @@ class GaussJordan(object):
                     print('Error: C++ output only supported for a matrix in CSR format.')
                     exit()
                 else:
-                    self.writeCode_Cpp(out_cpp)
+                    self.writeCode_Cpp(out_cpp, cpp_template)
                 
     def readfile(self):
         # Read in the array mask and store in amat as either 'False'
@@ -300,29 +302,74 @@ class GaussJordan(object):
         fo.write('{}return x\n'.format(indent))
         fo.close()
 
-    def writeCode_Cpp(self, outname):
-        ## Write C Solver Function
+    def writeCode_Cpp(self, outname, template=None):
+        # Write C Solver Function
+        ##
+        ## If a template file is supplied, this will insert the generated code
+        ## where the "<>code<>" string is found.
+        ##
+        ## Only the first instance of "<>code<>" is used
+        ## The generated code will be indented the same amount as "<>code<>"
+        ##
+        ## The generated code assumes that in the template, variables A, x, and b are
+        ## in the scope of "<>code<>" and are declared as type "Real*"
+
         try:
             fo = open(outname, 'w')
         except:
+            print("could not open C++ solver file for writing")
             raise
-        indent = ' '*2
-        fo.write('class SparseGaussJordan {\n')
-        fo.write('public:\n'.format(indent))
-        fo.write('{}__host__ __device__\n'.format(indent))
-        fo.write('{}static void solve(Real* A, Real* x, Real* b)'.format(indent) + ' {\n')
+
+        indent = " "*4
+        header = []
+        footer = []
+
+        if template:
+            try:
+                ft = open(template, 'r')
+            except:
+                print("could not open C++ template file for reading")
+                raise
+
+            found_code_loc = False
+            for l in ft:
+                loc = l.find("<>code<>")
+                if loc != -1:
+                    found_code_loc = True
+                    indent = " "*loc # indent the generated code the same amount as <>code<>
+                else:
+                    if found_code_loc:
+                        footer.append(l)
+                    else:
+                        header.append(l)
+            ft.close()
+        else:
+            header.append('class SparseGaussJordan {\n')
+            header.append('public:\n')
+            header.append('{}__host__ __device__\n'.format("  "))
+            header.append('{}static void solve(Real* A, Real* x, Real* b)'.format("  ") + ' {\n')
+
+            footer.append('{}'.format("  ") + '}\n')
+            footer.append('};\n')
         
+        # Write header
+        for l in header:
+            fo.write(l)
+
+        # Write generated code
         if self.cse_rep:
             for rep in self.cse_rep:
                 rep_value = self.cify(sympy.ccode(rep[1], precision = 15))
-                fo.write('{}Real {} = {};\n'.format(indent*2, rep[0], rep_value))
+                fo.write('{}Real {} = {};\n'.format(indent, rep[0], rep_value))
         fo.write('\n')
         for i, sol in enumerate(self.solution):
             sol_value = self.cify(sympy.ccode(sol, precision = 15))
-            fo.write('{}x[{}] = {};\n'.format(indent*2, i, sol_value))
+            fo.write('{}x[{}] = {};\n'.format(indent, i, sol_value))
             
-        fo.write('{}'.format(indent) + '}\n')
-        fo.write('};\n')
+        # Write footer
+        for l in footer:
+            fo.write(l)
+
         fo.close()
 
     def writeCode_Fortran95(self, outname):
