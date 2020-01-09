@@ -20,7 +20,13 @@ A `setup.py` installation script is provided:
 $ python3 setup.py install --user
 ```
 
-After this, the command-line program `gjsparse` should be in your PATH.
+The terminal output should include a line like:
+
+```
+Installing gjsparse script to [LOCATION]
+```
+
+After this, the command-line program `gjsparse` should be at `[LOCATION]` so you can add that to your `PATH`.
 
 # Use and Options:
 
