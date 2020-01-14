@@ -27,14 +27,18 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
+
 import sympy
+from pycallgraph import PyCallGraph
+from pycallgraph.output import GraphvizOutput
+
 from .Row import Row
 from .Element import Element1D, Element2D
 
 class GaussJordan(object):
     def __init__(self, structure_file=None, compressed_sparse_row=False,
                  out_py=None, out_f95=None, out_cpp=None, cpp_template=None,
-                 smp=None, expand=False, cse=None, verbose=None):
+                 smp=None, expand=False, cse=None, verbose=None, profile=False):
         self.infile = structure_file
         self.cse_rep = None
         self.verbose = verbose
@@ -46,7 +50,13 @@ class GaussJordan(object):
             self.readfile()
             if self.verbose:
                 self.printEquation()
-            self.pivotSolve()
+
+            if profile:
+                with PyCallGraph(output=GraphvizOutput()):
+                    self.pivotSolve()
+            else:
+                self.pivotSolve()
+
             if smp:
                 print('Simplifying')
                 self.simplify()
@@ -131,13 +141,13 @@ class GaussJordan(object):
                     else:
                         symrep = 'A_'+str(i+1)+'_'+str(j+1)+'_'
                         self.symtab[symrep] = Element2D('A', i+1, j+1)
-                    r_s.append(sympy.symbols(symrep))
+                    r_s.append(sympy.symbols(symrep, real=True, commutative=True))
                     index_csr += 1
                 else:
                     r_s.append(0)
             symrep = 'b_'+str(i+1)+'_'
             self.symtab[symrep] = Element1D('b', i+1)
-            r_s.append(sympy.symbols(symrep))
+            r_s.append(sympy.symbols(symrep, real=True, commutative=True))
             self.asym.append(Row(r_s))
 
         # Save a copy of the original sparsity
@@ -192,6 +202,7 @@ class GaussJordan(object):
                     break
 
         # Rearrange rows into RREF
+        print("Rearranging rows into RREF")
         asym_temp = []
         for i in range(len(self.asym)):
             for r in self.asym:
@@ -201,6 +212,7 @@ class GaussJordan(object):
         self.asym = [r for r in asym_temp]
 
         # Find solution vector
+        print("Getting solution vector")
         self.solution = [r.elements[-1] for r in self.asym]
 
     def simplify(self):
@@ -241,7 +253,7 @@ class GaussJordan(object):
 
     def elim_cse(self):
         ## Apply common sub-expressions elimination to solution
-        scratch_sym = sympy.utilities.numbered_symbols('scratch_')
+        scratch_sym = sympy.utilities.numbered_symbols('scratch_', real=True, commutative=True)
         cse_rep, cse_sol = sympy.cse(self.solution, symbols=scratch_sym, order='none')
         self.cse_rep = cse_rep
         if self.verbose:
