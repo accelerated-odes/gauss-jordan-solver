@@ -47,13 +47,10 @@ class Row(object):
                 for es, eo in zip(self.elements, other.elements):
                     sum_elements.append(es+eo)
                 return Row(sum_elements)
-        elif isinstance(other, (int, float) + tuple(sympy.core.all_classes)):
-            sum_elements = []
-            for es in self.elements:
-                sum_elements.append(es+other)
-            return Row(sum_elements)
         else:
-            return NotImplemented
+            for i, es in enumerate(self.elements):
+                self.elements[i] = es + other
+            return self
 
     def __sub__(self, other):
         if isinstance(other, Row):
@@ -65,13 +62,10 @@ class Row(object):
                 for es, eo in zip(self.elements, other.elements):
                     sum_elements.append(es-eo)
                 return Row(sum_elements)
-        elif isinstance(other, (int, float) + tuple(sympy.core.all_classes)):
-            sum_elements = []
-            for es in self.elements:
-                sum_elements.append(es-other)
-            return Row(sum_elements)
         else:
-            return NotImplemented
+            for i, es in enumerate(self.elements):
+                self.elements[i] = es - other
+            return self
 
     def __radd__(self, other):
         return self.__add__(other)
@@ -86,13 +80,10 @@ class Row(object):
                 for es, eo in zip(self.elements, other.elements):
                     sum_elements.append(eo-es)
                 return Row(sum_elements)
-        elif isinstance(other, (int, float) + tuple(sympy.core.all_classes)):
-            sum_elements = []
-            for es in self.elements:
-                sum_elements.append(other-es)
-            return Row(sum_elements)
         else:
-            return NotImplemented
+            for i, es in enumerate(self.elements):
+                self.elements[i] = other - es
+            return self
 
     def __mul__(self, other):
         if isinstance(other, Row):
@@ -105,13 +96,10 @@ class Row(object):
                 for es, eo in zip(self.elements, other.elements):
                     mul_elements.append(eo*es)
                 return Row(mul_elements)
-        elif isinstance(other, (int, float) + tuple(sympy.core.all_classes)):
-            mul_elements = []
-            for es in self.elements:
-                mul_elements.append(es*other)
-            return Row(mul_elements)
         else:
-            return NotImplemented
+            for i, es in enumerate(self.elements):
+                self.elements[i] = es * other
+            return self
 
     def __rmul__(self, other):
         return self.__mul__(other)
@@ -127,13 +115,10 @@ class Row(object):
                 for es, eo in zip(self.elements, other.elements):
                     div_elements.append(es/eo)
                 return Row(div_elements)
-        elif isinstance(other, (int, float) + tuple(sympy.core.all_classes)):
-            div_elements = []
-            for es in self.elements:
-                div_elements.append(es/other)
-            return Row(div_elements)
         else:
-            return NotImplemented
+            for i, es in enumerate(self.elements):
+                self.elements[i] = es / other
+            return self
         
     def __rtruediv__(self, other):
         if isinstance(other, Row):
@@ -146,13 +131,10 @@ class Row(object):
                 for es, eo in zip(self.elements, other.elements):
                     div_elements.append(eo/es)
                 return Row(div_elements)
-        elif isinstance(other, (int, float) + tuple(sympy.core.all_classes)):
-            div_elements = []
-            for es in self.elements:
-                div_elements.append(other/es)
-            return Row(div_elements)
         else:
-            return NotImplemented
+            for i, es in enumerate(self.elements):
+                self.elements[i] = other / es
+            return self
 
     def fnzero(self):
         # Finds the first nonzero element in the Row: x
