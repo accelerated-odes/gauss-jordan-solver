@@ -37,7 +37,7 @@ from .Element import Element1D, Element2D
 
 class GaussJordan(object):
     def __init__(self, structure_file=None, compressed_sparse_row=False,
-                 out_py=None, out_f95=None, out_cpp=None, cpp_template=None,
+                 out_py=None, out_f95=None, out_cpp=None, cpp_template=None, cpp_use_arraynd=False,
                  smp=None, expand=False, cse=None, verbose=None, profile=False):
         self.infile = structure_file
         self.cse_rep = None
@@ -73,12 +73,15 @@ class GaussJordan(object):
             if out_f95:
                 self.writeCode_Fortran95(out_f95)
             if out_cpp:
-                if not self.compressed_sparse_row:
+                if not self.compressed_sparse_row and not cpp_use_arraynd:
                     print('Error: C++ output only supported for a matrix in CSR format.')
                     exit()
+                elif self.compressed_sparse_row:
+                    print('Error: C++ output using ArrayND does not support CSR formatted matrices.')
+                    exit()
                 else:
-                    self.writeCode_Cpp(out_cpp, cpp_template)
-                
+                    self.writeCode_Cpp(out_cpp, cpp_template, cpp_use_arraynd)
+
     def readfile(self):
         # Read in the array mask and store in amat as either 'False'
         # or the string 'amat(i,j)' where i is the row number and
@@ -284,6 +287,15 @@ class GaussJordan(object):
     def cify(self,s):
         return self.pythonify(s)
 
+    def cify_arraynd(self,s):
+        # Fortran-ify string s by replacing A_i_j_ with A(i,j)
+        # and b_i_ with b(i)
+        sout = str(s)
+        for k in self.symtab.keys():
+            sout = sout.replace(k, self.symtab[k].fnrep)
+        sout = sout.replace("pow", "std::pow")
+        return sout
+
     def fortranify(self,s):
         # Fortran-ify string s by replacing A_i_j_ with A(i,j)
         # and b_i_ with b(i)
@@ -314,7 +326,7 @@ class GaussJordan(object):
         fo.write('{}return x\n'.format(indent))
         fo.close()
 
-    def writeCode_Cpp(self, outname, template=None):
+    def writeCode_Cpp(self, outname, template=None, cpp_use_arraynd=False):
         # Write C Solver Function
         ##
         ## If a template file is supplied, this will insert the generated code
@@ -325,6 +337,9 @@ class GaussJordan(object):
         ##
         ## The generated code assumes that in the template, variables A, x, and b are
         ## in the scope of "<>code<>" and are declared as type "Real*"
+        ##
+        ## If cpp_use_arraynd, then use Array1D and Array2D classes from amrex
+        ## with 1-based indexing.
 
         try:
             fo = open(outname, 'w')
@@ -356,13 +371,29 @@ class GaussJordan(object):
                         header.append(l)
             ft.close()
         else:
-            header.append('class SparseGaussJordan {\n')
-            header.append('public:\n')
-            header.append('{}__host__ __device__\n'.format("  "))
-            header.append('{}static void solve(Real* A, Real* x, Real* b)'.format("  ") + ' {\n')
+            if cpp_use_arraynd:
+                header.append("#ifndef _actual_linear_solver_H_\n")
+                header.append("#define _actual_linear_solver_H_\n\n")
+                header.append("#include <cmath>\n")
+                header.append("#include <AMReX_Array.H>\n")
+                header.append("#include <AMReX_REAL.H>\n\n")
+                header.append("using namespace amrex;\n\n")
+                header.append('AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE\n')
+                header.append('void actual_solve(Array2D<Real, 1, {}, 1, {}> const& A,\n'.format(self.nvars, self.nvars))
+                header.append('                  Array1D<Real, 1, {}>& b)\n'.format(self.nvars))
+                header.append("{\n")
+            else:
+                header.append('class SparseGaussJordan {\n')
+                header.append('public:\n')
+                header.append('{}__host__ __device__\n'.format("  "))
+                header.append('{}static void solve(Real* A, Real* x, Real* b)'.format("  ") + ' {\n')
 
-            footer.append('{}'.format("  ") + '}\n')
-            footer.append('};\n')
+            if cpp_use_arraynd:
+                footer.append("}\n")
+                footer.append("#endif")
+            else:
+                footer.append('{}'.format("  ") + '}\n')
+                footer.append('};\n')
         
         # Write header
         for l in header:
@@ -371,12 +402,31 @@ class GaussJordan(object):
         # Write generated code
         if self.cse_rep:
             for rep in self.cse_rep:
-                rep_value = self.cify(sympy.ccode(rep[1], precision = 15))
-                fo.write('{}Real {} = {};\n'.format(indent, rep[0], rep_value))
+                rep_value = None
+                if cpp_use_arraynd:
+                    rep_value = self.cify_arraynd(sympy.ccode(rep[1], precision = 15))
+                else:
+                    rep_value = self.cify(sympy.ccode(rep[1], precision = 15))
+                fo.write('{}const Real {} = {};\n'.format(indent, rep[0], rep_value))
         fo.write('\n')
+
+        if cpp_use_arraynd:
+            fo.write("{}Array1D<Real, 1, {}> x;\n\n".format(indent, self.nvars))
+
         for i, sol in enumerate(self.solution):
-            sol_value = self.cify(sympy.ccode(sol, precision = 15))
-            fo.write('{}x[{}] = {};\n'.format(indent, i, sol_value))
+            if cpp_use_arraynd:
+                sol_value = self.cify_arraynd(sympy.ccode(sol, precision = 15))
+                fo.write('{}x({}) = {};\n'.format(indent, i+1, sol_value))
+            else:
+                sol_value = self.cify(sympy.ccode(sol, precision = 15))
+                fo.write('{}x[{}] = {};\n'.format(indent, i, sol_value))
+
+        fo.write("\n")
+
+        if cpp_use_arraynd:
+            fo.write("{}for (int i = 1; i <= {}; ++i)".format(indent, self.nvars) + " {\n")
+            fo.write("{}{}b(i) = x(i);\n".format(indent, indent))
+            fo.write("{}".format(indent) + "}\n\n")
             
         # Write footer
         for l in footer:
