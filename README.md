@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/57070506.svg)](https://zenodo.org/badge/latestdoi/57070506)
+
 # gauss-jordan-solver
 
 Writes Fortran, Python, or C++ routines for solving the linear system
